@@ -64,7 +64,6 @@ def plot_distances(x, distances, eta, color, maxY):
     :param etas: correspondingly eta
     :return:
     """
-
     plt.plot(x, distances, color=color)
 
     # labels

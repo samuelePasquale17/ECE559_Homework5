@@ -219,8 +219,10 @@ def training_NN_forward_backward(x1, x2, y, num_epochs, W_rows, W_cols, avg, var
     for epoch in range(num_epochs):
         # pass over data set
         for x1_val, x2_val, y_val in zip(x1, x2, y):
+            x = [[x1_val], [x2_val]]
+
             # Forward
-            vz = v_z(W, [[x1_val], [x2_val]], b)
+            vz = v_z(W, x, b)
             z_vect = z(vz, a)
             vf = v_f(U, z_vect, c)
             f_out = f(vf, a)

@@ -256,6 +256,100 @@ def training_NN_forward_backward(x1, x2, y, num_epochs, W_rows, W_cols, avg, var
     return W, b, U, c
 
 
+def training_NN_forward_backward_v2(x1, x2, y, num_epochs, W_rows, W_cols, avg, var, b_rows, b_cols, U_rows, U_cols, c_rows, c_cols, a, eta, eta_dim_factor, eta_mod, initRand, initVal, minibatch_en, minibatch_size):
+    """
+    Function that given a data set, trains the NN with forward and backward propagation
+    :return:
+    """
+    if initRand:
+        # random initialization of weights and biases
+        W = initialize_matrix(W_rows, W_cols, avg, var)
+        b = initialize_matrix(b_rows, b_cols, avg, var)
+        U = initialize_matrix(U_rows, U_cols, avg, var)
+        c = initialize_matrix(c_rows, c_cols, avg, var)
+    else:
+        # initialization of weights and biases with the given value
+        W = np.full((W_rows, W_cols), initVal)
+        b = np.full((b_rows, b_cols), initVal)
+        U = np.full((U_rows, U_cols), initVal)
+        c = np.full((c_rows, c_cols), initVal)
+
+
+    # MSE list over epochs
+    MSE_results = []
+    # init MSE prec to inf
+    previous_mse = float('inf')
+
+    # run over data (epochs)
+    for epoch in range(num_epochs):
+        # init mse per epoch
+        mse_epoch = 0
+        # zeroed-out accumulators for gradient
+        grad_w_l_acc = 0
+        grad_b_l_acc = 0
+        grad_u_l_acc = 0
+        grad_c_l_acc = 0
+
+
+
+        # pass over data set
+        for i, (x1_val, x2_val, y_val) in enumerate(zip(x1, x2, np.array(y))):
+
+            # Forward (x -> vz -> z -> vf -> f)
+            x = [[x1_val], [x2_val]]
+            vz = v_z(W, x, b)
+            z_vect = z(vz, a)
+            vf = v_f(U, z_vect, c)
+            f_out = f(vf, a)
+
+            # Backward (grad_b_l <- grad_W_l <- delta_z <- grad_z_l <- grad_c_l <- grad_U_l <- delta_f <- grad_f_l)
+            grad_f_l  = gradient_f_l(f_out, y_val)
+            del_f = delta_f(grad_f_l, vf, a)
+            grad_u_l = np.array(del_f) @ np.array(z_vect).T
+            grad_c_l = del_f
+            grad_z_l = gradient_z_l(del_f, U)
+            del_z = delta_z(grad_z_l, vz, a)
+            grad_w_l = np.array(del_z) @ np.array(x).T
+            grad_b_l = del_z
+
+            # Check if grad's have to be accumulated
+            if minibatch_en:
+                # accumulate gradients
+                grad_w_l_acc += grad_w_l
+                grad_b_l_acc += grad_b_l
+                grad_u_l_acc += grad_u_l
+                grad_c_l_acc += grad_c_l
+
+            # check minibatch size
+            if minibatch_en and (i + 1) % minibatch_size == 0:
+                # end of the minibatch, update gradients and zero-out accumulators
+                W = W - eta * grad_w_l_acc
+                b = b - eta * grad_b_l_acc
+                U = U - eta * grad_u_l_acc
+                c = c - eta * grad_c_l_acc
+            elif not minibatch_en:
+                # gradient descend
+                W = W - eta * grad_w_l
+                b = b - eta * grad_b_l
+                U = U - eta * grad_u_l
+                c = c - eta * grad_c_l
+            # Accumulate squared error for MSE
+            mse_epoch += (f_out - y_val) ** 2
+        # Compute MSE for the current epoch and add to the list
+        mse_epoch /= len(y)  # Divide by the number of samples to get the average
+        MSE_results.append(mse_epoch)
+
+        # Check if the MSE is increasing and eta modulable is active
+        if mse_epoch > previous_mse and eta_mod:
+            # update eta
+            eta = eta * eta_dim_factor
+        # Update previous MSE for the next epoch
+        previous_mse = mse_epoch
+    # Plot MSE here
+    plot_mse_epoch(MSE_results)
+    return W, b, U, c
+
+
 def plot_3D_decision_boundary(x1, x2, y_pred):
     fig = plt.figure(figsize=(7, 10))
     ax = plt.axes(projection="3d")

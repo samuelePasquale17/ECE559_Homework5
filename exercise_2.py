@@ -191,7 +191,7 @@ def plot_mse_epoch(MSE_results, eta):
         y_mse.append(mse[0][0])
 
     plt.plot(range(1, len(y_mse) + 1), y_mse, marker='o', linestyle='-', color='b')
-    plt.title(f'MSE vs. Epochs with eta = 0.01 and dev. standard = {eta}')
+    plt.title(f'MSE vs. Epochs with eta = {eta}')
     plt.xlabel('Epochs')
     plt.ylabel('Mean Squared Error (MSE)')
     plt.grid(True)
